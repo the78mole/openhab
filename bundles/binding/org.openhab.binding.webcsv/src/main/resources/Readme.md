@@ -10,7 +10,7 @@ The general settings for a CSV webservice description are:
 
 ## Variables
 
-The properties file can define variables to make descriptions more hirarchical and easier to maintain. Variables can be defined with **vars.<VARNAME>** and access it in other parts of the properties with with %{<VARNAME>}. Currently there exists one predefined variable %{host} that contains the hostname from openhab.cfg.
+The properties file can define variables to make descriptions more hirarchical and easier to maintain. Variables can be defined with ```vars.<VARNAME>``` and access it in other parts of the properties with with ```%{<VARNAME>}```. Currently there exists one predefined variable ```%{host}``` that contains the hostname from openhab.cfg.
 
 It is suggested, to define a variable **vars.baseurl** where all other urls rely on. This usually looks like the following:
 
@@ -51,7 +51,7 @@ Some webservices are used for trnasformation purposes only. They consist mostly 
 
 **expr**: The expression devides a line of the response into two or more parts. Every matching group is then linked to the named variable (e.g. sid and sdesc), following the expression and separated by comma.
 
-**types**: Defines the types of the variables of the expression. All types of openHAB could generally be used. In openHAB they belong to classes org.openhab.core.library.items.<TYPE>Item. The "Item"-Part of the classes name is stripped of for the properties file.
+**types**: Defines the types of the variables of the expression. All types of openHAB could generally be used. In openHAB they belong to classes ```org.openhab.core.library.items.<TYPE>Item```. The "Item"-Part of the classes name is stripped of for the properties file.
 
 **refresh**: Defines, how often the look-up table is updated in milliseconds (only positive values). If ***-1*** is given, it is updated every time, the transformation is done. 0 means, the response is cached forever and never updated until the bundle or openHAB is restarted.
 
@@ -78,7 +78,7 @@ The values key defines the webservices for requesting the values. Each webservic
 
 **factors** specifies a factor for a value. This ist useful for systems that supply very hardware related values. Many embedded systems have a value range aligned to binary boundaries like 0..65535 and don't tend to convert them internally. Usually the applications provided by device manufacturers do this in advance to presenting the data to the user. Here we need to do it ourselves, before posting the value to the event bus. The type of the value will not change. If no conversion is needed, "null"-factor does not affect the value. Factor conversion is only available to Number and realted items (also DateTime, when expressed as seconds since 1/1/1970 or alike).
 
-**types** defines the types of the variables. Again, org.openhab.core.library.items.* contains allowd types with "Item" stripped of the classes names. e.g. NumberItem degrades to Number.
+**types** defines the types of the variables. Again, ```org.openhab.core.library.items.*``` serves as a list of allowd types with "Item" stripped of the classes names. e.g. NumberItem degrades to Number.
 
 **transforms** is one of the most powerfol properties. It contains a look-up procedure to translate values to other values and even types. It needs a reference ID to define the **var** to translate. The **TransID** defines the transformation specified in this properties file. **TransInVar** references the variable that needs a match with refID to make TransOutVar the wanted value.
 
