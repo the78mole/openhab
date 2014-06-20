@@ -175,4 +175,3 @@ Description:
 | 0     | Status code                       |
 | 1     | Human readable status description |
 
-The properties file is 
