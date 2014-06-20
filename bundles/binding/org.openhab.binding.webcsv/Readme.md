@@ -1,8 +1,10 @@
 # General description
 
-This binding supports many types of webservices that make values available as simple single line CSV tables. This e.g. applies for Powador Solar Inversters (tested with Powador 14.0 TL3).
+This binding supports many types of webservices that make values available as simple single line CSV tables. This e.g. applies for Powador Solar Inverters (tested with Powador 14.0 TL3).
 
 The binding can be configured with property files included in the bundle itself or even through fragment bundles, providing propertiy files within the src/main/resource folder of the binding jar.
+
+The given host is tested against each property file and if test is successful, the properties file serves as a driver to this device for getting the values.
 
 * openhab.cfg (mandatory)
 
