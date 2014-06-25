@@ -65,7 +65,10 @@ import org.slf4j.LoggerFactory;
  */
 public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider implements WebCSVBindingProvider {
 
-	static final Logger logger = LoggerFactory.getLogger(WebCSVGenericBindingProvider.class);
+	/**
+	 * The default LOGGER.
+	 */
+	static final Logger LOGGER = LoggerFactory.getLogger(WebCSVGenericBindingProvider.class);
 
 	/** 
 	 * Artificial command for the webcsv-in configuration
@@ -90,6 +93,10 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 
 	/**
 	 * @{inheritDoc}
+	 * 
+	 * No type should be invalid in general. It depends on the 
+	 * configuration that is done with properties for a special
+	 * device.
 	 */
 	@Override
 	public void validateItemType(Item item, String bindingConfig) throws BindingConfigParseException {
@@ -107,7 +114,7 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 			addBindingConfig(item, config);
 		}
 		else {
-			logger.warn("bindingConfig is NULL (item=" + item + ") -> process bindingConfig aborted!");
+			LOGGER.warn("bindingConfig is NULL (item=" + item + ") -> process bindingConfig aborted!");
 		}
 	}
 	
@@ -137,17 +144,15 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 			String direction = matcher.group(1);
 			String bindingConfigPart = matcher.group(2);
 			
-			if (direction.equals("<")) {
-				config = parseInBindingConfig(item, bindingConfigPart, config);
-			}
-			else if (direction.equals(">")) {
+			if (direction.equals(">")) {
 				// for future use (there is no out-bindung supported by WebCSV webinterface yet)
+				throw new BindingConfigParseException("Out-Binding is currently not supported.");
 			}
-			else {
-				// If we only support a single direction, there is no obvious reason to not simply leave it off -> no error here 
-				config = parseInBindingConfig(item, bindingConfig, config);
+			else { 
+				// this usually satisfies: if (direction.equals("<")) {
 				
-				//throw new BindingConfigParseException("Unknown command given! Configuration must start with '<' or '>' ");
+				// In-binding is the default direction for bindings. We can omit it
+				config = parseInBindingConfig(item, bindingConfigPart, config);
 			}
 		}
 		
@@ -173,12 +178,17 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 	 * @throws BindingConfigParseException if the regular expression doesn't match
 	 * the given <code>bindingConfig</code>
 	 */
-	protected WebCSVBindingConfig parseInBindingConfig(Item item, String bindingConfig, WebCSVBindingConfig config) throws BindingConfigParseException {
+	protected WebCSVBindingConfig parseInBindingConfig(
+			Item item, String bindingConfig, WebCSVBindingConfig config) 
+					throws BindingConfigParseException {
+		
 		Matcher matcher = IN_BINDING_PATTERN.matcher(bindingConfig);
 		
-		if (!matcher.matches()) {
-			throw new BindingConfigParseException("bindingConfig '" + bindingConfig + "' doesn't represent a valid in-binding-configuration. A valid configuration is matched by the RegExp '"+IN_BINDING_PATTERN+"'");
-		}
+		if (!matcher.matches()) 
+			throw new BindingConfigParseException("bindingConfig '" + bindingConfig + 
+					"' doesn't represent a valid in-binding-configuration. " +
+					"A valid configuration is matched by the RegExp '"+IN_BINDING_PATTERN+"'");
+		
 		matcher.reset();
 				
 		WebCSVBindingConfigElement configElement;
@@ -189,7 +199,7 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 			configElement.name = matcher.group(2);
 			configElement.refreshInterval = Integer.valueOf(matcher.group(3)).intValue();
 
-			logger.debug("WebCSV: "+configElement);
+			LOGGER.debug("WebCSV: "+configElement);
 			config.put(IN_BINDING_KEY, configElement);
 		}
 		
@@ -203,23 +213,30 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 	@Override
 	public Class<? extends Item> getItemType(String itemName) {
 		WebCSVBindingConfig config = (WebCSVBindingConfig) bindingConfigs.get(itemName);
+		
 		return config != null ? config.itemType : null;
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Getting the host makes no sense here. The serverId is a delegation to the 
+	 * correct data retriever and that should be used to access data.
 	 */
 	public String getHost(String itemName) {
 		WebCSVBindingConfig config = (WebCSVBindingConfig) bindingConfigs.get(itemName);
-		return config != null && config.get(IN_BINDING_KEY) != null ? config.get(IN_BINDING_KEY).host : null;
+		
+		return config != null && config.get(IN_BINDING_KEY) != null ? 
+				config.get(IN_BINDING_KEY).host : null;
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Getting the port makes no sense here. The serverId is a delegation to the 
+	 * correct data retriever and that should be used to access data.
 	 */
 	public String getPort(String itemName){
 		WebCSVBindingConfig config = (WebCSVBindingConfig) bindingConfigs.get(itemName);
-		return config != null && config.get(IN_BINDING_KEY) != null ? config.get(IN_BINDING_KEY).port : null;
+		
+		return config != null && config.get(IN_BINDING_KEY) != null ? 
+				config.get(IN_BINDING_KEY).port : null;
 	}	
 	
 	/**
@@ -227,7 +244,8 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 	 */
 	public String getName(String itemName) {
 		WebCSVBindingConfig config = (WebCSVBindingConfig) bindingConfigs.get(itemName);
-		return config != null && config.get(IN_BINDING_KEY) != null ? config.get(IN_BINDING_KEY).name : null;
+		return config != null && config.get(IN_BINDING_KEY) != null ? 
+				config.get(IN_BINDING_KEY).name : null;
 	}
 
 	/**
@@ -235,7 +253,8 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 	 */
 	public int getRefreshInterval(String itemName) {
 		WebCSVBindingConfig config = (WebCSVBindingConfig) bindingConfigs.get(itemName);
-		return config != null && config.get(IN_BINDING_KEY) != null ? config.get(IN_BINDING_KEY).refreshInterval : 0;
+		return config != null && config.get(IN_BINDING_KEY) != null ? 
+				config.get(IN_BINDING_KEY).refreshInterval : 0;
 	}
 	
 	/**
@@ -243,12 +262,14 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 	 */
 	public List<String> getInBindingItemNames() {
 		List<String> inBindings = new ArrayList<String>();
+		
 		for (String itemName : bindingConfigs.keySet()) {
 			WebCSVBindingConfig httpConfig = (WebCSVBindingConfig) bindingConfigs.get(itemName);
 			if (httpConfig.containsKey(IN_BINDING_KEY)) {
 				inBindings.add(itemName);
 			}
 		}
+		
 		return inBindings;
 	}
 
@@ -286,7 +307,9 @@ public class WebCSVGenericBindingProvider extends AbstractGenericBindingProvider
 	@Override
 	public String getServerId(String itemName) {
 		WebCSVBindingConfig config = (WebCSVBindingConfig) bindingConfigs.get(itemName);
-		return config != null && config.get(IN_BINDING_KEY) != null ? config.get(IN_BINDING_KEY).serverId : "";
+		
+		return config != null && config.get(IN_BINDING_KEY) != null ? 
+				config.get(IN_BINDING_KEY).serverId : "";
 	}
 	
 	

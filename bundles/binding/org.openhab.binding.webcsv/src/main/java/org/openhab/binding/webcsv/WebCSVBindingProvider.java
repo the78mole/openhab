@@ -19,12 +19,11 @@ import org.openhab.core.items.Item;
  * between openHAB items and a WebCSV host.
  * 
  * @author the78mole (Daniel Glaser)
- * @since 1.5.0
  */
 public interface WebCSVBindingProvider extends BindingProvider {
 
 	/**
-	 * Returns the Type of the Item identified by {@code itemName}
+	 * Returns the Type of the Item identified by {@code itemName}.
 	 * 
 	 * @param itemName the name of the item to find the type for
 	 * @return the type of the Item identified by {@code itemName}
@@ -32,16 +31,18 @@ public interface WebCSVBindingProvider extends BindingProvider {
 	Class<? extends Item> getItemType(String itemName);
 	
 	/**
-	 * Return the IP host for WebCSV host linked to the item
+	 * Return the IP host for WebCSV host linked to the item.
 	 * 
-	 * @param itemName the item for which to find the host
+	 * @param itemName the item for which to find the corresponding host
+	 * @return returns the hostname of the host handling the item
 	 */
 	String getHost(String itemName);
 
 	/**
-	 * Return the WebCSV hosts port for the item (linked to the parameter)
+	 * Return the WebCSV hosts port for the item (linked to the parameter).
 	 * 
 	 * @param itemName the item for which to find the port
+	 * @return returns the port of the host handling the item
 	 */
 	String getPort(String itemName);
 	
@@ -49,6 +50,7 @@ public interface WebCSVBindingProvider extends BindingProvider {
 	 * Return the WebCSV host ServerID linked to the item.
 	 * 
 	 * @param itemName the item for which to find the serverId
+	 * @return the server ID of the server handling the item
 	 */
 	String getServerId(String itemName);
 	
@@ -58,6 +60,7 @@ public interface WebCSVBindingProvider extends BindingProvider {
 	 * used for the item.
 	 * 
 	 * @param itemName the item for which to find the name
+	 * @return the WebCSV internal name of the item
 	 */
 	String getName(String itemName);
 	
@@ -73,7 +76,7 @@ public interface WebCSVBindingProvider extends BindingProvider {
 	int getRefreshInterval(String itemName);
 	
 	/**
-	 * Returns all items which are mapped to a WebCSV-In-Binding
+	 * Returns all items which are mapped to a WebCSV-In-Binding.
 	 * @return item which are mapped to a WebCSV-In-Binding
 	 */
 	List<String> getInBindingItemNames();

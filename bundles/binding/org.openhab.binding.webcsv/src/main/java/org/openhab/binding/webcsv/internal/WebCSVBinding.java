@@ -8,11 +8,8 @@
  */
 package org.openhab.binding.webcsv.internal;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -29,7 +26,6 @@ import org.openhab.binding.webcsv.WebCSVBindingProvider;
 import org.openhab.core.binding.AbstractActiveBinding;
 import org.openhab.core.items.Item;
 import org.openhab.core.types.State;
-import org.openhab.io.net.http.HttpUtil;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.cm.ConfigurationException;
 import org.osgi.service.cm.ManagedService;
@@ -47,7 +43,10 @@ public class WebCSVBinding extends
 		AbstractActiveBinding<WebCSVBindingProvider> implements
 		ManagedService {
 
-	static final Logger logger = LoggerFactory.getLogger(WebCSVBinding.class);
+	/**
+	 * The default LOGGER.
+	 */
+	static final Logger LOGGER = LoggerFactory.getLogger(WebCSVBinding.class);
 
 	/**
 	 * the timeout to use for connecting to a given host (defaults to 5000
@@ -69,7 +68,7 @@ public class WebCSVBinding extends
 	
 	private Map<String, WebCSVConfig> serverList = new HashMap<String, WebCSVConfig>();
 	
-	private Map<String, Properties> propList = new HashMap<String, Properties>();
+	private Map<String, Properties> propList = null;
 
 //	private long refreshInterval = 0L;
 	private Map<WebCSVBindingProvider, Long> lastUpdated = new HashMap<WebCSVBindingProvider, Long>(); 
@@ -80,17 +79,35 @@ public class WebCSVBinding extends
 
 	@Override
 	public void activate() {
-		logger.debug("WebCSV: Activate");
+		LOGGER.debug("WebCSV: Activate");
 		super.activate();
 		
-		// Now build the device driver stubs (parse and unserialize only testing rules)
+		rebuildPropertiesList();
+
+	}
+
+
+	/**
+	 * Collects all WebCSV property files from src/main/resources and stores 
+	 * it in propList.
+	 * 
+	 * <p>TODO: Check if porperties list is up to date and only actualize it. 
+	 * With many property files this could lead to a reasonable performance improvement.
+	 * Another possibility for many configurations could be to only keep stubs and testing 
+	 * rules and finalize the unserialization when a matching config was found</p>
+	 */
+	private void rebuildPropertiesList() {
+
+		propList = new HashMap<String, Properties>(); 
+		
+		// Now build the device driver stubs
 		BundleContext bc = WebCSVActivator.getContext();
 		Enumeration<URL> ePropFiles = bc.getBundle().findEntries("src/main/resources/", "*.properties", true);
 		while(ePropFiles.hasMoreElements()) {
 			Properties ptmp = new Properties();
+			URL propFile = ePropFiles.nextElement();
 			try {
-				InputStream propFile = ePropFiles.nextElement().openStream();
-				InputStream pis = propFile;
+				InputStream pis = propFile.openStream();			
 				ptmp.load(pis);
 				String stmp = null;
 				stmp = ptmp.getProperty("name", stmp);
@@ -98,12 +115,12 @@ public class WebCSVBinding extends
 				if(stmp != null)
 					propList.put(stmp, ptmp);
 				else
-					logger.warn("Properties for file {} do not contain a valie 'name' property. It is not read.", stmp);
+					LOGGER.warn("Properties for file {} do not contain a valid 'name' property. It is not read.", stmp);
 			} catch (IOException e) {
+				LOGGER.error("An IOException occured for property {}.", propFile.toString());
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	/**
@@ -181,7 +198,8 @@ public class WebCSVBinding extends
 				String spec = matcher.group(2);
 				
 				if("device".equals(spec)) {
-					logger.warn("WebCSV device access not yet implemented.");
+					// TODO: implement the device access e.g. serial cable or virtual com port 
+					LOGGER.warn("WebCSV device access not yet implemented.");
 					continue;
 				} else if("host".equals(spec)) {
 
@@ -209,94 +227,35 @@ public class WebCSVBinding extends
 		}
 	}
 	
-	private static final Pattern varsFind = Pattern.compile("(%\\{[0-9a-zA-Z_]+\\})"); 
-	
+	/**
+	 * 
+	 * @param host
+	 * @return
+	 */
 	private Properties searchConfig(String host) {
+		
+		if(propList == null)
+			return null;
+		
 		Set<String> propKeys = propList.keySet();
 
+		// Stepping through all the configs to find the handler for the given host.
 		Iterator<String> ikey = propKeys.iterator();
-		boolean foundConfig = false;
-		String foundKey = null;
-		while(ikey.hasNext() && !foundConfig) {
+
+		while(ikey.hasNext()) {
 			String key = ikey.next();
 			Properties sProp = propList.get(key);
-			if(!sProp.containsKey("test.url")) {
-				logger.warn("Properties {} do not contain a check.", ikey);
-				continue;
-			}
 			
-			String testURL = sProp.getProperty("test.url");
-			Matcher matcher = varsFind.matcher(testURL);
+			Boolean testResult = WebCSVChecker.doWebCSVCheck(sProp, true);
 			
-			while(matcher.find()) {
-				// Substitute the vars with their corresponding values
-				String embVar = matcher.group(1);
-				String sVar = embVar.substring(2, embVar.length()-1);
-				String varValue;
-				if("host".equals(sVar))
-					varValue = host;
-				else
-					varValue = sProp.getProperty("vars."+sVar);
-				if(varValue != null) {
-					testURL = testURL.replace(embVar, varValue);
-					matcher = varsFind.matcher(testURL);
-				} else {
-					logger.error("Could not replace {} by {} in {}. Maybe the variable is unknown.", embVar, sVar, testURL);
-				}
-			}
+			if(testResult != null && testResult) 
+				return sProp;
 			
-			// Got the test location, now retrieving check data
-			URL url = null;
-			try {
-				url = new URL(testURL);
-				
-				String retval = HttpUtil.executeUrl("GET", url.toString(), 3000);
-
-				if(retval == null) {
-					logger.warn("Could not connect to {}. Server returned {}. Seems not to be a {}", testURL, key);
-					continue;
-				}
-				
-				if(!sProp.containsKey("test.expr")) {
-					// If no expression is given, a 200 OK status is all we need...
-					// but we do not break search. Maybe we find a better one with matching regex
-					logger.warn("Properties {} do not contain a regex check.", ikey);
-					foundKey = key;
-					continue;
-				} else {
-					// If we have an expression, we can check the type of the system
-
-					BufferedReader brin = new BufferedReader(new StringReader(retval));
-					
-					// We read now line by line and check them against the pattern. 
-					// If one matches, we assume that we have the appropriate system 
-					String line;
-					while((line = brin.readLine()) != null) {
-						String mexpr = sProp.getProperty("test.expr").replaceAll("^\"", "").replaceAll("\"$", "");
-						if (line.matches(mexpr)) {
-							foundConfig = true;
-							foundKey = key;
-						}
-					}
-				}
-
-			} catch (MalformedURLException e) {
-				logger.error("{} is not a valid url used by {}.", url);
-			} catch (IOException e) {
-				logger.error("An IO Exception occured for {}: \r\n {}", url, e.toString());
-			}
-
-				
 		}
 		
-		if(foundConfig && foundKey != null) {
-			return propList.get(foundKey);
-		}
-
-		logger.warn("No config found for {}.", host);
+		// We did not find a matching configuration...
 		return null;
-
-
+		
 	}
 	
 }

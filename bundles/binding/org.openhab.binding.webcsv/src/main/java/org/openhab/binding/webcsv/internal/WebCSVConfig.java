@@ -2,6 +2,7 @@ package org.openhab.binding.webcsv.internal;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,46 +16,45 @@ import org.slf4j.LoggerFactory;
 
 class WebCSVConfig {
 
-	static final Logger logger = LoggerFactory
-			.getLogger(WebCSVConfig.class);
+	/**
+	 * The default LOGGER.
+	 */
+	static final Logger LOGGER = LoggerFactory.getLogger(WebCSVConfig.class);
 
-	// The Pattern for matching variables %{VARNAME}
-	// group(0) then conains the full variable
-	// group(1) only the variable configname
-	static final Pattern varpat = Pattern.compile("%\\{([0-9a-zA-Z_-]+)\\}");
+	/**
+	 * The Pattern for matching variables %{VARNAME}.
+	 * <b>group(0)</b> then contains the full variable
+	 * <b>group(1)</b> only the variable configName 
+	 */
+	static final Pattern VARIABLES_PATTERN = Pattern.compile("%\\{([0-9a-zA-Z_-]+)\\}");
 
 	public String serverId;
 	public String host;
-	private String configname;
+	private String configName;
 	private Map<String, String> vars = new HashMap<String, String>();
 	private Map<String, String> options = new HashMap<String, String>();
 	private Map<String, WebCSVValues> values = new HashMap<String, WebCSVValues>();
 	private Map<String, WebCSVValue> valueMap = new TreeMap<String, WebCSVValue>();
 
-	private Map<String, WebCSVTransformer> transforms = new HashMap<String, WebCSVTransformer>();
-
-	private WebCSVChecker pdchecker;
-
-	private Boolean pdactive;
-
 	private String configMaturity;
 	private String configAuthor;
 
-	private static final Pattern REGEX_TRANSFORM = Pattern
-			.compile("\"([^\"]+)\",(.*)$");
+	/**
+	 * A pattern to trim quotes and make varnames accessibble by matcher groups from regular expression properties.
+	 */
+	private static final Pattern REGEX_TRANSFORM = Pattern.compile("\"([^\"]+)\",(.*)$");
 
-	public WebCSVConfig(String serverId, String host, Properties props,
-			Map<String, String> vars) {
+	public WebCSVConfig(String serverId, String host, Properties props,	Map<String, String> locVars) {
 
 		this.serverId = serverId;
 		if (this.vars == null)
 			this.vars = new HashMap<String, String>();
-		else if (vars != null)
-			this.vars.putAll(vars);
+		else if (locVars != null)
+			this.vars.putAll(locVars);
 		if (host != null)
 			this.host = host;
 		else
-			logger.warn("No host argument supplied for constructor call! Probably problems will arise later on.");
+			LOGGER.warn("No host argument supplied for constructor call! Probably problems will arise later on.");
 		if (props != null)
 			processProperties(props);
 	}
@@ -72,66 +72,66 @@ class WebCSVConfig {
 		// if(host != null)
 		// vars.put("host", host);
 		// else
-		// logger.warn("No host defined. This can lead to many problems...");
+		// LOGGER.warn("No host defined. This can lead to many problems...");
 
-		// Get the configname of the config
-		configname = props.getProperty("properties.name", "undefined");
-		if("undefined".equals(configname))
-			logger.warn("properties.name is not defined in {}.", props);
-
+		// Get the configName of the config
+		configName = props.getProperty("properties.name", "undefined");
 		configMaturity = props.getProperty("properties.maturity", "draft");
 		configAuthor = props.getProperty("properties.author", "the78mole@github");
+
+		String msg = new String("You are using a {} version of WebCSV-Configuration {}.\r\n" 
+				+ " Please report errors to the author {}.");
 		
-		String msg = new String("You are using a {} version of WebCSV-Configuration {}.\r\n" +
-				"  Please report errors to the author {}.");
-		if(logger.isDebugEnabled() && "rocksolid".equalsIgnoreCase(configMaturity))
-			logger.debug(msg, configMaturity, configname, configAuthor);
-		if("stable".equalsIgnoreCase(configMaturity))
-			logger.debug(msg, configMaturity, configname, configAuthor);
-		else if("testing".equalsIgnoreCase(configMaturity))
-			logger.info(msg, configMaturity, configname, configAuthor);
-		else 
-			logger.warn(msg, configMaturity, configname, configAuthor);
+		if ("undefined".equals(configName))
+			LOGGER.warn("properties.name is not defined in {}.", props);
+		else if (LOGGER.isDebugEnabled() && "rocksolid".equalsIgnoreCase(configMaturity))
+			LOGGER.debug(msg, configMaturity, configName, configAuthor);
+		else if ("stable".equalsIgnoreCase(configMaturity))
+			LOGGER.debug(msg, configMaturity, configName, configAuthor);
+		else if ("testing".equalsIgnoreCase(configMaturity))
+			LOGGER.info(msg, configMaturity, configName, configAuthor);
+		else
+			LOGGER.warn(msg, configMaturity, configName, configAuthor);
 
 		// 2nd get the check
 		// pdchecker = new WebCSVChecker();
 		// pdactive = pdchecker.doWebCSVCheck(false);
 
 		// 1st get all the vars and substitute themselves recursively
-		Map<String, String> vars = processPropertiesVars(props, host);
+		Map<String, String> locVars = processPropertiesVars(props, host);
 
 		// Now process the options
 		options = processPropertiesOptions(props);
 
 		// Now process the transform data suppliers
 		Map<String, WebCSVTransformer> trans = processPropertiesTransforms(
-				props, vars);
+				props, locVars);
 
 		// Now process the values
-		values = processPropertiesValues(props, vars, trans, valueMap);
+		values = processPropertiesValues(props, locVars, trans, valueMap);
 
 	}
 
 	/**
 	 * Processes the value properties and returns the map that resolves variable
 	 * names to value collections, that handle the data retrieval.
-	 * 
+	 *
 	 * @param props
 	 *            The Properties to process
-	 * @param vars
+	 * @param locVars
 	 *            The already extracted property variables from the properties
 	 *            to substitute the stuff
 	 * @param trans
 	 *            The already extracted transformation objects
-	 * @param valueMap
+	 * @param locValueMap
 	 *            The Map where to store the mapping variable to WebCSVValue
 	 *            object
-	 * @return The Mapping from variable configname to value collection
+	 * @return The Mapping from variable configName to value collection
 	 */
 	private Map<String, WebCSVValues> processPropertiesValues(
-			Properties props, Map<String, String> vars,
+			Properties props, Map<String, String> locVars,
 			Map<String, WebCSVTransformer> trans,
-			Map<String, WebCSVValue> valueMap) {
+			Map<String, WebCSVValue> locValueMap) {
 
 		String[] propkeysplit;
 		String propval;
@@ -140,10 +140,10 @@ class WebCSVConfig {
 		for (Object sProp : props.keySet()) {
 			// while (kProps.hasMoreElements()) {
 			propkeysplit = ((String) sProp).split("\\.");
-			String propValId = propkeysplit[1], 
-					propSub = (propkeysplit.length > 2 ? propkeysplit[2] : null); 
+			String propValId = propkeysplit[1],
+					propSub = (propkeysplit.length > 2 ? propkeysplit[2] : null);
 			propval = props.getProperty((String) sProp);
-			
+
 			if ("values".equals(propkeysplit[0])) {
 				if ((propkeysplit.length == 4 && "transforms".equals(propSub))
 						|| propkeysplit.length == 3) {
@@ -152,19 +152,22 @@ class WebCSVConfig {
 					// values.<valuesID>.vars=<var1>,<var2>,...,<varN>
 					if ("vars".equals(propSub)) {
 						WebCSVValues pvtmp = vals.get(propValId);
-						if (pvtmp == null)
-							pvtmp = new WebCSVValues(propValId,propval.split(","), true);
+						if (pvtmp == null) {
+							pvtmp = new WebCSVValues(propValId, propval.split(","), true);
+						}
 						// set a default value for refresh
-						pvtmp.setRefresh(props.getProperty("options.refresh","30000"));
+						pvtmp.setRefresh(props.getProperty("options.refresh", "30000"));
 						pvtmp.setCacheEnabled(props.getProperty("options.cache", "enabled"));
-						for (WebCSVValue spv : pvtmp.getValues())
-							valueMap.put(spv.getName(), spv);
+
+						for (WebCSVValue spv : pvtmp.getValues()) {
+							locValueMap.put(spv.getName(), spv);
+						}
 						vals.put(propValId, pvtmp);
 					}
-				} else
-					logger.error(
-							"Wrong property key {} for values property type. Needs 4 parts with transform, otherwise 3 parts, separated by dot.",
-							sProp);
+				} else {
+					LOGGER.error("Wrong property key {} for values property type."
+							+ "Needs 4 parts with transform, otherwise 3 parts, separated by dot.", sProp);
+				}
 
 			}
 		}
@@ -176,9 +179,9 @@ class WebCSVConfig {
 			propval = props.getProperty((String) sProp);
 			if ("values".equals(propkeysplit[0]) && propkeysplit.length >= 3) {
 
-				String propValId = propkeysplit[1], 
-						propSub = propkeysplit[2], 
-						propSub_transVar = propkeysplit.length == 4 ? propkeysplit[3]	: null;
+				String propValId = propkeysplit[1],
+						propSub = propkeysplit[2],
+						propSubTransVar = propkeysplit.length == 4 ? propkeysplit[3] : null;
 
 				if (propkeysplit.length == 3 || (propkeysplit.length == 4 && "transforms".equals(propSub))) {
 
@@ -191,7 +194,7 @@ class WebCSVConfig {
 						else if ("split".equals(propSub))
 							pvals.setSplit(propval);
 						else if ("url".equals(propSub))
-							pvals.setURL(expandURL(propval, vars));
+							pvals.setURL(expandURL(propval, locVars));
 						else if ("refresh".equals(propSub))
 							pvals.setRefresh(propval);
 						else if ("transforms".equals(propSub)) {
@@ -199,21 +202,20 @@ class WebCSVConfig {
 							if (transOpts.length == 3) {
 								String transKey = transOpts[0], transInRel = transOpts[1], transOutRel = transOpts[2];
 								WebCSVTransformer ttmp = trans.get(transKey);
-								WebCSVValue pvtmp = valueMap.get(propSub_transVar);
-								pvtmp.setTransform(propSub_transVar,ttmp, transInRel,transOutRel);
+								WebCSVValue pvtmp = locValueMap.get(propSubTransVar);
+								pvtmp.setTransform(propSubTransVar, ttmp, transInRel, transOutRel);
 							} else
-								logger.error(
-										"Transformation property {} invalid. Syntax is: <transformation.name>,<inputvar>,<outputvar>",
-										sProp);
+								LOGGER.error("Transformation property {} invalid. Syntax is: "
+										+ "<transformation.name>,<inputvar>,<outputvar>", sProp);
 
 						}
 					} else
-						logger.error(
+						LOGGER.error(
 								"This should never happen. There are no vars specified for {}.",
 								propValId);
 
 				} else
-					logger.error("Malformed property configname {}", sProp);
+					LOGGER.error("Malformed property configName {}", sProp);
 			}
 		}
 
@@ -221,12 +223,12 @@ class WebCSVConfig {
 	}
 
 	private Map<String, WebCSVTransformer> processPropertiesTransforms(
-			Properties props, Map<String, String> vars) {
+			Properties props, Map<String, String> locVars) {
 		
 		String[] propkeysplit;
 		String propval;
 		Map<String, WebCSVTransformer> trans = new TreeMap<String, WebCSVTransformer>();
-		for(Object sProp : props.keySet()) {
+		for (Object sProp : props.keySet()) {
 			propkeysplit = ((String) sProp).split("\\.");
 			
 			if ("transforms".equals(propkeysplit[0]) && propkeysplit.length == 3) {
@@ -236,11 +238,11 @@ class WebCSVConfig {
 				propval = props.getProperty((String) sProp);
 
 				WebCSVTransformer ttmp = trans.get(propValId);
-				if(ttmp == null)
+				if (ttmp == null)
 					ttmp = new WebCSVTransformer(propValId);
 				
 				if ("url".equals(propSub))
-					ttmp.setURL(expandURL(propval, vars));
+					ttmp.setURL(expandURL(propval, locVars));
 				else if ("types".equals(propSub))
 					ttmp.setTypes(propval.split(","));
 				else if ("expr".equals(propSub)) {
@@ -248,7 +250,7 @@ class WebCSVConfig {
 					// The expression itself (trim ")
 					// The group variables
 					Matcher matcher = REGEX_TRANSFORM.matcher(propval);
-					if(matcher.find()) {
+					if (matcher.find()) {
 						ttmp.expr = Pattern.compile(matcher.group(1));
 						ttmp.exprGroupVars = matcher.group(2).split(",");
 					}
@@ -257,14 +259,15 @@ class WebCSVConfig {
 					try {
 						refresh = Long.parseLong(propval);
 					} catch (NumberFormatException e) {
-						logger.error("Could not parse {}={}. Is it really a long numeric value?", sProp, propval);
+						LOGGER.error("Could not parse {}={}. Is it really a long numeric value?", sProp, propval);
 					}
 					// If none is specified, set a default value for refresh.
-					if(refresh == null)
+					if (refresh == null)
 						try {
 							refresh = Long.parseLong(props.getProperty("options.refresh", "30000"));
 						} catch (NumberFormatException e) {
-							logger.error("Could not parse options.refresh={}. Is it really a long numeric value?", propval);
+							LOGGER.error("Could not parse options.refresh={}. "
+									+ "Is it really a long numeric value?", propval);
 						}
 					ttmp.refresh = refresh;
 						
@@ -275,22 +278,59 @@ class WebCSVConfig {
 		return trans;
 	}
 
-	private URL expandURL(String strurl, Map<String, String> vars) {
+	/**
+	 * Expands a given URL with the variables given in the vars Dictionary.
+	 * 
+	 * @deprecated As the Dictionary class itself is deprecated, the method 
+	 * expandURL with the Map interface should be used. 
+	 * 
+	 * @param strurl
+	 * 		The url to expand, containing variables.
+	 * @param vars
+	 * 		The variables the url should be expanded with as a Dictionary. 
+	 * @return
+	 * 		an URL object that contains the expanded url.
+	 */
+	public static URL expandURL(String strurl, Dictionary<String, String> vars) {
+		
+		Enumeration<String> varKeys = vars.keys();
+		HashMap<String, String> varmap = new HashMap<String, String>();
+		
+		String varelem;
+		while (varKeys.hasMoreElements()) {
+			varelem = varKeys.nextElement();
+			varmap.put(varelem, vars.get(varelem));
+		}
+		
+		return expandURL(strurl, varmap);
+	}
+	
+	/**
+	 * Expands a given URL with the variables given in the vars Map.
+	 * 
+	 * @param strurl
+	 * 		The url to expand, containing variables.
+	 * @param vars
+	 * 		The variables the url should be expanded with as a Map. 
+	 * @return
+	 * 		an URL object that contains the expanded url.
+	 */
+	public static URL expandURL(String strurl, Map<String, String> vars) {
 
 		String strurlwork = new String(strurl);
 		// Parse all stuff and substitute the variables
 		for (String svar : vars.keySet()) {
 			String value = vars.get(svar);
-			Matcher varmatch = varpat.matcher(strurlwork);
+			Matcher varmatch = VARIABLES_PATTERN.matcher(strurlwork);
 			while (varmatch.find()) {
 				if (vars.containsKey(varmatch.group(1)))
 					strurlwork = strurlwork.replace(varmatch.group(0),
 							vars.get(varmatch.group(1)));
 				else
-					logger.warn(
+					LOGGER.warn(
 							"Substitution of variable {} in url property {} ({}) is not possible. Variable is unknown.",
 							varmatch.group(1), strurl, strurlwork);
-				varmatch = varpat.matcher(strurlwork);
+				varmatch = VARIABLES_PATTERN.matcher(strurlwork);
 			}
 			vars.put(svar, value);
 		}
@@ -299,7 +339,7 @@ class WebCSVConfig {
 		try {
 			tmpurl = new URL(strurlwork);
 		} catch (MalformedURLException e) {
-			logger.error("Url {} is malformed, expanded from {}.", tmpurl, strurl);
+			LOGGER.error("Url {} is malformed, expanded from {}.", tmpurl, strurl);
 		}
 
 		return tmpurl;
@@ -330,41 +370,46 @@ class WebCSVConfig {
 		String[] propkeysplit;
 		String propval;
 		Enumeration<Object> kProps = props.keys();
-		Map<String, String> vars = new TreeMap<String, String>();
+		Map<String, String> locVars = new TreeMap<String, String>();
 		while (kProps.hasMoreElements()) {
 			sProp = (String) kProps.nextElement();
 			propkeysplit = sProp.split("\\.");
 			propval = props.getProperty(sProp);
 			if ("vars".equals(propkeysplit[0]) && propkeysplit.length == 2) {
 				// We can simply put it. If it exists, it will be simply updated
-				vars.put(propkeysplit[1], propval);
+				locVars.put(propkeysplit[1], propval);
 			}
 		}
 
-		vars.put("host", host);
+		locVars.put("host", host);
 
-		for (String svar : vars.keySet()) {
-			String value = vars.get(svar);
-			Matcher varmatch = varpat.matcher(value);
+		for (String svar : locVars.keySet()) {
+			String value = locVars.get(svar);
+			Matcher varmatch = VARIABLES_PATTERN.matcher(value);
 			while (varmatch.find()) {
-				if (vars.containsKey(varmatch.group(1)))
+				if (locVars.containsKey(varmatch.group(1)))
 					value = value.replace(varmatch.group(0),
-							vars.get(varmatch.group(1)));
+							locVars.get(varmatch.group(1)));
 				else
-					logger.warn(
+					LOGGER.warn(
 							"Substitution of variable {} in property {} is not possible. Variable is unknown.",
 							varmatch.group(1), svar);
-				varmatch = varpat.matcher(value);
+				varmatch = VARIABLES_PATTERN.matcher(value);
 			}
-			vars.put(svar, value);
+			locVars.put(svar, value);
 
 		}
 
-		return vars;
+		return locVars;
 
 	}
 
+	/**
+	 * The toString() method of this object.
+	 * 
+	 * @return the String conversion of this object
+	 */
 	public String toString() {
-		return this.serverId+"=[configname="+this.configname+",host="+this.host+"]";
+		return this.serverId + "=[configName=" + this.configName + ", host=" + this.host + "]";
 	}
 }

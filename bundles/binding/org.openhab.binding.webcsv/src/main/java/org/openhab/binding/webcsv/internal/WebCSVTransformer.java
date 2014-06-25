@@ -28,11 +28,17 @@ public class WebCSVTransformer {
 	 */
 	public Long refresh;
 	public Long lastUpdated = 0L;
-	private static final long maxlines = 1000;
 	private String[] types;
+	
+	/**
+	 * Maximum lines that should be read from transformation web service.
+	 */
+	private static final long MAXLINES = 1000;
 
-	static final Logger logger = LoggerFactory
-			.getLogger(WebCSVTransformer.class);
+	/**
+	 * The default LOGGER.
+	 */
+	static final Logger LOGGER = LoggerFactory.getLogger(WebCSVTransformer.class);
 
 	public void setURL(URL url) {
 		this.url = url;
@@ -80,7 +86,7 @@ public class WebCSVTransformer {
 			String line;
 			String[] tmpres;
 			boolean runner = true;
-			long cntlines = maxlines;
+			long cntlines = MAXLINES;
 			while (runner && cntlines > 0 && (line = brin.readLine()) != null) {
 				tmpres = matchLine(expr.matcher(line), inVarPos, outVarPos);
 				if (tmpres != null && tmpres.length >= 2) {
@@ -101,7 +107,7 @@ public class WebCSVTransformer {
 
 			brin.close();
 		} catch (IOException e) {
-			logger.error(
+			LOGGER.error(
 					"IO Exception while connecting to {} in Transformer {}.",
 					url.toString(), this.name);
 			e.printStackTrace();
@@ -118,12 +124,12 @@ public class WebCSVTransformer {
 					return new String[] { matcher.group(inVarPos + 1),
 							matcher.group(outVarPos + 1) };
 				} else
-					logger.error(
+					LOGGER.error(
 							"Can not find variable position {} and {} in expression group variables {}.",
 							inVarPos, outVarPos,
 							Arrays.deepToString(exprGroupVars));
 			} else
-				logger.error("Expression matched but not enough expression groups found ???");
+				LOGGER.error("Expression matched but not enough expression groups found ???");
 
 		}
 
@@ -147,11 +153,11 @@ public class WebCSVTransformer {
 				tmpres = matchLine(expr.matcher(lastMatchedLine), inVarPos, outVarPos);
 				
 				if(tmpres[0].equals(inValue)) {
-					logger.debug("1st Level cache hit for {} == {} -> {} = {} in Transformer {}.", 
+					LOGGER.debug("1st Level cache hit for {} == {} -> {} = {} in Transformer {}.", 
 							transformInVar, inValue, transformOutVar, tmpres[1]);
 					return tmpres[1];
 				} else {
-					logger.debug("1st Level cache miss for {} != {} in Transformer {}. Executing 2nd level cached search.", 
+					LOGGER.debug("1st Level cache miss for {} != {} in Transformer {}. Executing 2nd level cached search.", 
 							transformInVar, inValue, transformOutVar, tmpres[1]);
 					tmpres = executeCached(inValue, inVarPos, outVarPos);
 				}

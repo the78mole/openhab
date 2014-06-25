@@ -67,7 +67,7 @@ public class WebCSVValues {
 				this.refresh = Long.parseLong(refresh);
 			} catch (NumberFormatException e) {
 				this.refresh = 0L;
-				logger.error("Refresh with value {} can not be parsed to a Long value. Setting to not refresh.", refresh);
+				LOGGER.error("Refresh with value {} can not be parsed to a Long value. Setting to not refresh.", refresh);
 			}
 	}
 
@@ -85,7 +85,10 @@ public class WebCSVValues {
 		return values.values().toArray(new WebCSVValue[0]);
 	}
 
-	static final Logger logger = LoggerFactory.getLogger(WebCSVValues.class);
+	/**
+	 * The default LOGGER.
+	 */
+	static final Logger LOGGER = LoggerFactory.getLogger(WebCSVValues.class);
 	private static final int READ_MAX_LINES = 100;
 	
 	private static final String[] CACHE_ENABLED = new String[] {"true", "enabled", "on", "cached"};
@@ -115,7 +118,7 @@ public class WebCSVValues {
 		else if(Arrays.asList(CACHE_ENABLED).contains(lcce))
 			this.cacheEnabled = true;
 		else {
-			logger.warn("{} is not a valid cache setting. Must be one of {} or {}", cacheEnabled, 
+			LOGGER.warn("{} is not a valid cache setting. Must be one of {} or {}", cacheEnabled, 
 					Arrays.deepToString(CACHE_ENABLED), Arrays.deepToString(CACHE_DISABLED));
 			this.cacheEnabled = true;
 		}
@@ -155,16 +158,16 @@ public class WebCSVValues {
 					lastUpdate = System.currentTimeMillis();
 					updated = true;
 				} else
-					logger.error("Result {} from WebCSV host was not matching the expected one from properties.", this.name);
+					LOGGER.error("Result {} from WebCSV host was not matching the expected one from properties.", this.name);
 
 			} catch (IOException e) {
-				logger.error("IO-Exception occured on connecting/while reading for url {}.", url);
+				LOGGER.error("IO-Exception occured on connecting/while reading for url {}.", url);
 				e.printStackTrace();
 			}
 				 
 			
 		} else 
-			logger.debug("Update of values not needed. Skipping.");
+			LOGGER.debug("Update of values not needed. Skipping.");
 		
 		return updated;
 	}
@@ -179,7 +182,7 @@ public class WebCSVValues {
 				values.get(vars[i]).setFactor(factors[i]);
 			}
 		} else
-			logger.warn("Count of vars ({}) and factors ({}) differ for values.{}.", vars.length, factors.length, this.name);
+			LOGGER.warn("Count of vars ({}) and factors ({}) differ for values.{}.", vars.length, factors.length, this.name);
 	}
 
 	public void setTypes(String[] types) {
@@ -188,7 +191,7 @@ public class WebCSVValues {
 				values.get(vars[i]).setType(types[i]);
 			}
 		} else
-			logger.warn("Count of vars ({}) and types ({}) differ for values.{}.", vars.length, types.length, this.name);
+			LOGGER.warn("Count of vars ({}) and types ({}) differ for values.{}.", vars.length, types.length, this.name);
 	}
 	
 	public String toString() {

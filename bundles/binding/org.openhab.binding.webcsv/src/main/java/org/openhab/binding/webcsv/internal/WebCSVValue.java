@@ -26,7 +26,11 @@ public class WebCSVValue {
 	public WebCSVValues aggregator = null;
 	public Long lastUpdate = null;
 	private String type = null;
-	static final Logger logger = LoggerFactory.getLogger(WebCSVValue.class);
+	
+	/**
+	 * The default LOGGER.
+	 */
+	static final Logger LOGGER = LoggerFactory.getLogger(WebCSVValue.class);
 
 	public String getName() {
 		return name;
@@ -85,7 +89,7 @@ public class WebCSVValue {
 			try {
 				setFactor(Double.parseDouble(factor));
 			} catch (NumberFormatException e) {
-				logger.error("{} can not be parsed to a Double value for {}.", factor, this.name);
+				LOGGER.error("{} can not be parsed to a Double value for {}.", factor, this.name);
 			}
 	}
 	
@@ -96,12 +100,12 @@ public class WebCSVValue {
 	public void setTransform(String transVar, WebCSVTransformer webCSVTransformer, 
 			String transInRel, String transOutRel) {
 		if(this.transform != null && webCSVTransformer != null && !this.transform.equals(webCSVTransformer))
-			logger.info("Transformer {} for value {} was overwritten by {}");
+			LOGGER.info("Transformer {} for value {} was overwritten by {}");
 		
 		if(webCSVTransformer != null)
 			this.transform = webCSVTransformer;
 		else
-			logger.info("Resetting in ({}) and out ({}) variables to {} and {}.", 
+			LOGGER.info("Resetting in ({}) and out ({}) variables to {} and {}.", 
 					this.transformInVar, this.transformOutVar, transInRel, transOutRel);
 		
 		this.transformInVar = transInRel;
@@ -169,22 +173,22 @@ public class WebCSVValue {
 					state = aTypeConstructor.newInstance(tmpval);
 					break;
 				} catch (NoSuchMethodException e) {
-					logger.warn("Was not able to creaty type {} from String because of {}.", aType.toString(), e);
+					LOGGER.warn("Was not able to creaty type {} from String because of {}.", aType.toString(), e);
 				} catch	(SecurityException e) {
-					logger.warn("Was not able to creaty type {} from String because of {}.", aType.toString(), e);
+					LOGGER.warn("Was not able to creaty type {} from String because of {}.", aType.toString(), e);
 				} catch	(IllegalArgumentException e) {
-					logger.warn("Was not able to creaty type {} from String because of {}.", aType.toString(), e);
+					LOGGER.warn("Was not able to creaty type {} from String because of {}.", aType.toString(), e);
 				} catch	(InvocationTargetException e) {
-					logger.warn("Was not able to creaty type {} from String because of {}.", aType.toString(), e);
+					LOGGER.warn("Was not able to creaty type {} from String because of {}.", aType.toString(), e);
 				}
 					
 			}
 		} catch (ClassNotFoundException e) {
-			logger.error("The class {} could not be found for building state {}.", strITC, name);
+			LOGGER.error("The class {} could not be found for building state {}.", strITC, name);
 		} catch (InstantiationException e) {
-			logger.error("Could not instantiate {}. Wired...!", strITC);
+			LOGGER.error("Could not instantiate {}. Wired...!", strITC);
 		} catch (IllegalAccessException e) {
-			logger.error("Some IllegalAccessException occured while trying to instantiate {} for state update of {}.", strITC, name);
+			LOGGER.error("Some IllegalAccessException occured while trying to instantiate {} for state update of {}.", strITC, name);
 			e.printStackTrace();
 		} catch (SecurityException e) {
 			e.printStackTrace();
@@ -193,7 +197,7 @@ public class WebCSVValue {
 		} catch (InvocationTargetException e) {
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {
-			logger.error("Could not instantiate {} for state update of {}.", strITC, name);
+			LOGGER.error("Could not instantiate {} for state update of {}.", strITC, name);
 			e.printStackTrace();
 		}
 

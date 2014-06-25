@@ -22,7 +22,10 @@ import org.slf4j.LoggerFactory;
  */
 public final class WebCSVActivator implements BundleActivator {
 
-	private static Logger logger = LoggerFactory.getLogger(WebCSVActivator.class); 
+	/**
+	 * The default logger.
+	 */
+	private static final Logger LOGGER = LoggerFactory.getLogger(WebCSVActivator.class); 
 	
 	private static BundleContext context;
 	
@@ -31,7 +34,7 @@ public final class WebCSVActivator implements BundleActivator {
 	 */
 	public void start(BundleContext bc) throws Exception {
 		context = bc;
-		logger.debug("WebCSV binding has been started.");
+		LOGGER.debug("WebCSV binding has been started.");
 	}
 
 	/**
@@ -39,7 +42,7 @@ public final class WebCSVActivator implements BundleActivator {
 	 */
 	public void stop(BundleContext bc) throws Exception {
 		context = null;
-		logger.debug("WebCSV binding has been stopped.");
+		LOGGER.debug("WebCSV binding has been stopped.");
 	}
 	
 	/**
