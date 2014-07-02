@@ -1,9 +1,22 @@
 import org.openhab.core.library.types.*
 import org.openhab.core.persistence.*
 import org.openhab.model.script.actions.*
+import java.lang.Math
 
 var Number counter = 1
 var Timer timer = null
+
+rule "Power DC Single"
+	when
+		Item UDC1 received update or
+		Item UDC2 received update
+	then
+		var Number varPDC1 = (UDC1.state as DecimalType) * (IDC1.state as DecimalType) 
+		var Number varPDC2 = (UDC2.state as DecimalType) * (IDC2.state as DecimalType)
+		
+		postUpdate(PDC1, varPDC1);
+		postUpdate(PDC2, varPDC2);
+end
 
 /**
  * This is a demo rule which simulates a real dimmer by reacting to increase/decrease commands 

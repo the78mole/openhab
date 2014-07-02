@@ -6,6 +6,12 @@ Group Outdoor 	(All)
 Group Shutters 	(All)
 Group Weather 	(All)
 Group Status 	(All)
+Group gPowador
+Group gPowadorUDC
+Group gPowadorIDC
+Group gPowadorUAC
+Group gPowadorIAC
+Group gPowadorPDC
 
 Group GF_Living 	"Living Room" 	<video> 	(gGF)
 Group GF_Kitchen 	"Kitchen" 		<kitchen> 	(gGF)
@@ -23,6 +29,27 @@ Group:Switch:OR(ON, OFF) 		Lights 		"All Lights [(%d)]" 								(All)
 Group:Switch:OR(ON, OFF) 		Heating 	"No. of Active Heatings [(%d)]" 	<heating> 		(All)
 Group:Number:AVG 				Temperature	"Avg. Room Temperature [%.1f °C]" 	<temperature>	(Status)
 Group:Contact:OR(OPEN, CLOSED) 	Windows 	"Open windows [(%d)]"				<contact>		(All)
+
+Number UDC1 "Spannung DC1 [%.0f V]" <energy> (gPowador,gPowadorUDC) { webcsv="<pd1:udc1:5000"  }
+Number UDC2 "Spannung DC2 [%.0f V]" <energy> (gPowador,gPowadorUDC) { webcsv="<pd1:udc2:5000"  }
+Number UAC1 "Spannung L1 [%.0f V]" <energy> (gPowador,gPowadorUAC) { webcsv="<pd1:uac1:5000"  }
+Number UAC2 "Spannung L2 [%.0f V]" <energy> (gPowador,gPowadorUAC) { webcsv="<pd1:uac2:5000"  }
+Number UAC3 "Spannung L3 [%.0f V]" <energy> (gPowador,gPowadorUAC) { webcsv="<pd1:uac3:5000"  }
+
+Number IDC1 "Strom DC1 [%.1f A]" <energy> (gPowador,gPowadorIDC) { webcsv="<pd1:idc1:5000"  }
+Number IDC2 "Strom DC2 [%.1f A]" <energy> (gPowador,gPowadorIDC) { webcsv="<pd1:idc2:5000"  }
+Number IAC1 "Strom L1 [%.1f A]" <energy> (gPowador,gPowadorIAC) { webcsv="<pd1:iac1:5000"  }
+Number IAC2 "Strom L2  [%.1f A]" <energy> (gPowador,gPowadorIAC) { webcsv="<pd1:iac2:5000"  }
+Number IAC3 "Strom L3 [%.1f A]" <energy> (gPowador,gPowadorIAC) { webcsv="<pd1:iac3:5000"  }
+Number PDC "Leistung DC [%.1f W]" <sun> (gPowador,gPowadorPDC) { webcsv="<pd1:pdc:5000"  }
+Number PDC1 "Leistung DC1 [%.1f W]" <sun> (gPowador,gPowadorPDC)
+Number PDC2 "Leistung DC2 [%.1f W]" <sun> (gPowador,gPowadorPDC)
+
+Number PDT "Powador Temp [%.1f °C]" <temperature> (gPowador) { webcsv="<pd1:temp:5000" }
+Number PDSTATNum "Status [%s]" <socket> (gPowador) { webcsv="<pd1:status:5000" }
+String PDSTAT "Status [%s]" <socket> (gPowador) { webcsv="<pd1:status:5000" }
+
+
 
 /* Lights */
 Dimmer Light_GF_Living_Table 		"Table" 		(GF_Living, Lights)

@@ -9,4 +9,5 @@ Items {
 	
 	// let's only store temperature values in rrd
 	Temperature*,Weather_Chart* : strategy = everyMinute, restoreOnStartup
+	gPowador* : strategy = everyMinute, restoreOnStartup
 }

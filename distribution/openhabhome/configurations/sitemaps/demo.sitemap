@@ -1,10 +1,7 @@
 sitemap demo label="Main Menu"
 {
-	Frame {
-		Group item=gFF label="First Floor" icon="firstfloor"
-		Group item=gGF label="Ground Floor" icon="groundfloor"
-		Group item=gC label="Cellar" icon="cellar"	
-		Group item=Outdoor icon="garden" 
+	Frame label="Date" {
+		Text item=Date
 	}
 	Frame label="Weather" {
 		Text item=Weather_Temperature valuecolor=[Weather_LastUpdate=="Uninitialized"="lightgray",Weather_LastUpdate>90="lightgray",>25="orange",>15="green",>5="orange",<=5="blue"] {
@@ -21,8 +18,20 @@ sitemap demo label="Main Menu"
 			}
 		}
 	}
-	Frame label="Date" {
-		Text item=Date
+	Frame {
+		Group item=gPowador label="Powador" icon="sun"
+		Text item=PDT
+		Chart item=gPowadorPDC period=d refresh=600		
+		Chart item=gPowadorUDC period=d refresh=600		
+		Chart item=gPowadorIDC period=d refresh=600		
+		Chart item=gPowadorUAC period=d refresh=600		
+		Chart item=gPowadorIAC period=d refresh=600		
+	}
+	Frame {
+		Group item=gFF label="First Floor" icon="firstfloor"
+		Group item=gGF label="Ground Floor" icon="groundfloor"
+		Group item=gC label="Cellar" icon="cellar"	
+		Group item=Outdoor icon="garden" 
 	}
 	Frame label="Demo" {
 		Text label="Group Demo" icon="firstfloor" {
