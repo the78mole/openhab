@@ -22,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.openhab.binding.webcsv.WebCSVBindingProvider;
+import org.openhab.binding.webcsv.IWebCSVBindingProvider;
 import org.openhab.core.binding.AbstractActiveBinding;
 import org.openhab.core.items.Item;
 import org.openhab.core.types.State;
@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * @since 1.5.0
  */
 public class WebCSVBinding extends
-		AbstractActiveBinding<WebCSVBindingProvider> implements
+		AbstractActiveBinding<IWebCSVBindingProvider> implements
 		ManagedService {
 
 	/**
@@ -49,34 +49,38 @@ public class WebCSVBinding extends
 	static final Logger LOGGER = LoggerFactory.getLogger(WebCSVBinding.class);
 
 	/**
-	 * the timeout to use for connecting to a given host (defaults to 5000
-	 * milliseconds)
+	 * The timeout to use for connecting to a given host (defaults to 5000 milliseconds).
 	 */
-	// TODO forward this to the data retrievers
-	private long timeout = 5000;
+	private int timeout = 5000;
 
 	/**
-	 * the interval to find new refresh candidates (defaults to 1000
-	 * milliseconds)
+	 * the interval to find new refresh candidates (defaults to 1000 milliseconds).
 	 */
 	private long granularity = 10000;
 
 	/**
-	 *  RegEx to validate a config <code>'^(.*?)\\.(host|port)$'</code> 
+	 *  RegEx to validate a config <code>'^(.*?)\\.(host|port)$'</code> .
 	 */
 	private static final Pattern EXTRACT_CONFIG_PATTERN = Pattern.compile("^(.*?)\\.(host|device)$");
 	
+	/**
+	 * Holds the list of hosts (IDs from openHAB configuration file) with their corresponding config. 
+	 */
 	private Map<String, WebCSVConfig> serverList = new HashMap<String, WebCSVConfig>();
 	
+	/**
+	 * Holds a list of available driver-like properties files.
+	 */
 	private Map<String, Properties> propList = null;
 
-//	private long refreshInterval = 0L;
-	private Map<WebCSVBindingProvider, Long> lastUpdated = new HashMap<WebCSVBindingProvider, Long>(); 
+	/**
+	 * Stores the data providers with the timestamps when data was last refreshed.
+	 */
+	private Map<IWebCSVBindingProvider, Long> lastUpdated = new HashMap<IWebCSVBindingProvider, Long>(); 
 
-	public WebCSVBinding() {
-	}
-	
-
+	/**
+	 * Activates this binding. It will initially generate the properties file list.
+	 */
 	@Override
 	public void activate() {
 		LOGGER.debug("WebCSV: Activate");
@@ -91,10 +95,10 @@ public class WebCSVBinding extends
 	 * Collects all WebCSV property files from src/main/resources and stores 
 	 * it in propList.
 	 * 
-	 * <p>TODO: Check if porperties list is up to date and only actualize it. 
+	 * <p>TODO Check if properties list is up to date and only actualize it. 
 	 * With many property files this could lead to a reasonable performance improvement.
 	 * Another possibility for many configurations could be to only keep stubs and testing 
-	 * rules and finalize the unserialization when a matching config was found</p>
+	 * rules and finalize the unserialization when a matching configuration was found</p>
 	 */
 	private void rebuildPropertiesList() {
 
@@ -103,7 +107,7 @@ public class WebCSVBinding extends
 		// Now build the device driver stubs
 		BundleContext bc = WebCSVActivator.getContext();
 		Enumeration<URL> ePropFiles = bc.getBundle().findEntries("src/main/resources/", "*.properties", true);
-		while(ePropFiles.hasMoreElements()) {
+		while (ePropFiles.hasMoreElements()) {
 			Properties ptmp = new Properties();
 			URL propFile = ePropFiles.nextElement();
 			try {
@@ -112,7 +116,7 @@ public class WebCSVBinding extends
 				String stmp = null;
 				stmp = ptmp.getProperty("name", stmp);
 				stmp = ptmp.getProperty("properties.name", stmp);
-				if(stmp != null)
+				if (stmp != null)
 					propList.put(stmp, ptmp);
 				else
 					LOGGER.warn("Properties for file {} do not contain a valid 'name' property. It is not read.", stmp);
@@ -124,24 +128,27 @@ public class WebCSVBinding extends
 	}
 
 	/**
-	 * @{inheritDoc}
+	 * {@inheritDoc} 
 	 */
 	@Override
 	protected long getRefreshInterval() {
 		return granularity;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	protected String getName() {
 		return "WebCSV Refresh Service";
 	}
 	
 	/**
-	 * @{inheritDoc}
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void execute() {
-		for (WebCSVBindingProvider provider : providers) {
+		for (IWebCSVBindingProvider provider : providers) {
 			
 			for (String itemName : provider.getInBindingItemNames()) {
 				
@@ -156,11 +163,11 @@ public class WebCSVBinding extends
 				Class<? extends Item> itemType = provider.getItemType(itemName);
 				State pValState = pv.getTypeMatchingValue(itemType);
 					
-				if(pValState != null) {
+				if (pValState != null) {
 					eventPublisher.postUpdate(itemName, pValState);
 				}
 
-				lastUpdated.put(provider,System.currentTimeMillis());
+				lastUpdated.put(provider, System.currentTimeMillis());
 			}
 		}
 	}
@@ -169,12 +176,11 @@ public class WebCSVBinding extends
 	 * {@inheritDoc}
 	 */
 	public void updated(Dictionary<String, ?> config) throws ConfigurationException {
-		if(config != null) {
+		if (config != null) {
 			Enumeration<String> keys = config.keys();
 			
-			if ( serverList == null ) {
+			if (serverList == null) 
 				serverList = new HashMap<String, WebCSVConfig>();
-			}
 			
 			while (keys.hasMoreElements()) {
 				String key = (String) keys.nextElement();
@@ -197,15 +203,17 @@ public class WebCSVBinding extends
 				String serverId = matcher.group(1);
 				String spec = matcher.group(2);
 				
-				if("device".equals(spec)) {
-					// TODO: implement the device access e.g. serial cable or virtual com port 
+				if ("device".equals(spec)) {					
+					
+					// TODO implement the device access e.g. serial cable or virtual com port 
 					LOGGER.warn("WebCSV device access not yet implemented.");
 					continue;
-				} else if("host".equals(spec)) {
+					
+				} else if ("host".equals(spec)) {
 
 					String host = (String) config.get(key);
-					WebCSVConfig deviceConfig = new WebCSVConfig(serverId, host, searchConfig(host), null);
-					if(deviceConfig != null)
+					WebCSVConfig deviceConfig = new WebCSVConfig(serverId, host, searchConfig(host));
+					if (deviceConfig != null)
 						serverList.put(serverId, deviceConfig);
 					
 				}
@@ -214,8 +222,10 @@ public class WebCSVBinding extends
 			
 			String timeoutString = (String) config.get("timeout");
 			if (StringUtils.isNotBlank(timeoutString)) {
-				timeout = Long.parseLong(timeoutString);
+				timeout = Integer.parseInt(timeoutString);
 			}
+			for (WebCSVConfig sval : serverList.values())
+				sval.setTimeout(timeout);
 
 			String granularityString = (String) config.get("granularity");
 			if (StringUtils.isNotBlank(granularityString)) {
@@ -228,13 +238,15 @@ public class WebCSVBinding extends
 	}
 	
 	/**
+	 * Searches all available properties until the meta information of the host 
+	 * matches the url and regular expression defined in the properties. 
 	 * 
-	 * @param host
-	 * @return
+	 * @param host the host to search a config for
+	 * @return first property that matches with the hosts meta information
 	 */
 	private Properties searchConfig(String host) {
 		
-		if(propList == null)
+		if (propList == null)
 			return null;
 		
 		Set<String> propKeys = propList.keySet();
@@ -242,13 +254,13 @@ public class WebCSVBinding extends
 		// Stepping through all the configs to find the handler for the given host.
 		Iterator<String> ikey = propKeys.iterator();
 
-		while(ikey.hasNext()) {
+		while (ikey.hasNext()) {
 			String key = ikey.next();
 			Properties sProp = propList.get(key);
 			
 			Boolean testResult = WebCSVChecker.doWebCSVCheck(sProp, true);
 			
-			if(testResult != null && testResult) 
+			if (testResult != null && testResult) 
 				return sProp;
 			
 		}

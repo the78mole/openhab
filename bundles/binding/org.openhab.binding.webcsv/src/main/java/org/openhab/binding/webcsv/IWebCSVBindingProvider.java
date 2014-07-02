@@ -20,7 +20,7 @@ import org.openhab.core.items.Item;
  * 
  * @author the78mole (Daniel Glaser)
  */
-public interface WebCSVBindingProvider extends BindingProvider {
+public interface IWebCSVBindingProvider extends BindingProvider {
 
 	/**
 	 * Returns the Type of the Item identified by {@code itemName}.
