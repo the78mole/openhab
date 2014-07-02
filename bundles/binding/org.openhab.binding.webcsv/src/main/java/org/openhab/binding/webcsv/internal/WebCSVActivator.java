@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Extension of the default OSGi bundle activator
+ * Extension of the default OSGi bundle activator.
  * 
  * @author Chris Jackson
  * @since 1.3.0
@@ -27,10 +27,13 @@ public final class WebCSVActivator implements BundleActivator {
 	 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(WebCSVActivator.class); 
 	
+	/**
+	 * The context this bundle is running in.
+	 */
 	private static BundleContext context;
 	
 	/**
-	 * Called whenever the OSGi framework starts our bundle
+	 * {@inheritDoc}
 	 */
 	public void start(BundleContext bc) throws Exception {
 		context = bc;
@@ -38,7 +41,7 @@ public final class WebCSVActivator implements BundleActivator {
 	}
 
 	/**
-	 * Called whenever the OSGi framework stops our bundle
+	 * {@inheritDoc}
 	 */
 	public void stop(BundleContext bc) throws Exception {
 		context = null;
@@ -46,7 +49,7 @@ public final class WebCSVActivator implements BundleActivator {
 	}
 	
 	/**
-	 * Returns the bundle context of this bundle
+	 * Returns the bundle context of this bundle.
 	 * @return the bundle context
 	 */
 	public static BundleContext getContext() {

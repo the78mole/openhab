@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * TODO: Not fully tested!!!
+ * TODO Not fully tested!!!
  * 
  * <p>The WebCSV checker is called to test if the host is up and/or 
  * against a given configuration (properties) file.</p>
@@ -26,8 +26,19 @@ import org.slf4j.LoggerFactory;
  */
 public class WebCSVChecker {
 
+	/**
+	 * The name of this checker.
+	 */
 	private String name;
+	
+	/**
+	 * The url this checker is linked to.
+	 */
 	private URL url;
+	
+	/**
+	 * The pattern to check the data from url.
+	 */
 	private Pattern pattern;
 
 	/**
@@ -127,7 +138,7 @@ public class WebCSVChecker {
 	}
 
 	/**
-	 * Tests if the host is up and the specified port is open
+	 * Tests if the host is up and the specified port is open.
 	 * 
 	 * @param host
 	 * 			The hostname or IP address of the host to ping 
@@ -181,9 +192,10 @@ public class WebCSVChecker {
 		String retval = HttpUtil.executeUrl("GET", url.toString(), 3000);
 
 
-		if(retval != null) {
-			if(pattern == null) {
-				LOGGER.warn("No pattern defined for {}. Assuming it works, since url {} provided at least no error.", name, url.toString());
+		if (retval != null) {
+			if (pattern == null) {
+				LOGGER.warn("No pattern defined for {}. Assuming it works, since url {} provided at least no error.", 
+						name, url.toString());
 				return true;
 			}
 
@@ -221,12 +233,12 @@ public class WebCSVChecker {
 		try {
 			url = new URL((String) props.get("test.url"));
 			String testExpr = props.getProperty("test.expr");
-			if(testExpr != null)
+			if (testExpr != null)
 				pattern = Pattern.compile(props.getProperty("test.expr"));
 			else
-				LOGGER.warn("No test expression defined in {}. " +
-						"If a connection to the given url can be established, it is assumed to work." + 
-						"This is not a reliable/good test approach.", name);
+				LOGGER.warn("No test expression defined in {}. " 
+						+ "If a connection to the given url can be established, it is assumed to work." 
+						+ "This is not a reliable/good test approach.", name);
 		} catch (MalformedURLException e) {
 			LOGGER.error("Test URL {} in {} is malformed", url.toString(), name);
 		}

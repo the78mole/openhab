@@ -13,7 +13,7 @@
    <implementation class="org.openhab.binding.webcsv.internal.WebCSVGenericBindingProvider"/>
    <service>
       <provide interface="org.openhab.model.item.binding.BindingConfigReader"/>
-      <provide interface="org.openhab.binding.webcsv.WebCSVBindingProvider"/>
+      <provide interface="org.openhab.binding.webcsv.IWebCSVBindingProvider"/>
    </service>
 </scr:component>
 
