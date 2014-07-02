@@ -159,7 +159,8 @@ public class WebCSVValues {
 				brin.close();
 			
 				// Some hosts (e.g. Powador inverters) put a semicolon at the end of each line. 
-				// Therefore it usually splits one value more than vars are given. 
+				// Therefore it usually splits one value more than vars are given. Therefore check is done
+				// not on equal but on greater equal.
 				if (tmpres.length >= vars.length) {
 					for (int i = 0; i < vars.length; i++) {
 						values.get(vars[i]).updateValue(tmpres[i]);
